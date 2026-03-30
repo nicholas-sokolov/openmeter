@@ -9,7 +9,6 @@ import (
 	"github.com/openmeterio/openmeter/openmeter/billing/charges"
 	chargesusagebased "github.com/openmeterio/openmeter/openmeter/billing/charges/usagebased"
 	"github.com/openmeterio/openmeter/openmeter/billing/worker/subscriptionsync/service/persistedstate"
-	"github.com/openmeterio/openmeter/openmeter/billing/worker/subscriptionsync/service/reconciler/chargeupdater"
 	"github.com/openmeterio/openmeter/openmeter/billing/worker/subscriptionsync/service/targetstate"
 	"github.com/openmeterio/openmeter/pkg/timeutil"
 )
@@ -45,7 +44,7 @@ func (c *usageBasedChargeCollection) AddCreate(target targetstate.StateItem) err
 		Discounts:      rateCardMeta.Discounts,
 	})
 
-	return c.addPatch(target.UniqueID, PatchOperationCreate, chargeupdater.NewCreatePatch(intent))
+	return c.addCreate(intent)
 }
 
 func (c *usageBasedChargeCollection) AddDelete(uniqueID string, existing persistedstate.Item) error {

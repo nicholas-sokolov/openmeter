@@ -8,8 +8,8 @@ import (
 
 	"github.com/openmeterio/openmeter/openmeter/billing/charges"
 	chargesflatfee "github.com/openmeterio/openmeter/openmeter/billing/charges/flatfee"
+	"github.com/openmeterio/openmeter/openmeter/billing/charges/meta"
 	"github.com/openmeterio/openmeter/openmeter/billing/worker/subscriptionsync/service/persistedstate"
-	"github.com/openmeterio/openmeter/openmeter/billing/worker/subscriptionsync/service/reconciler/chargeupdater"
 	"github.com/openmeterio/openmeter/openmeter/billing/worker/subscriptionsync/service/targetstate"
 	"github.com/openmeterio/openmeter/pkg/timeutil"
 )
@@ -52,11 +52,12 @@ func (c *flatFeeChargeCollection) AddCreate(target targetstate.StateItem) error 
 		AmountBeforeProration: flatPrice.Amount,
 	})
 
-	return c.addPatch(target.UniqueID, PatchOperationCreate, chargeupdater.NewCreatePatch(intent))
+	return c.addCreate(intent)
 }
 
-func (c *flatFeeChargeCollection) AddDelete(uniqueID string, existing persistedstate.Item) error {
-	return c.unsupportedOperationError(PatchOperationDelete, uniqueID, existing)
+func (c *flatFeeChargeCollection) AddDelete(_ string, existing persistedstate.Item) error {
+	// TODO: Later we might want to make this configurable
+	return c.addPatch(existing.ID().ID, meta.PatchDelete{Policy: meta.RefundAsCreditsDeletePolicy})
 }
 
 func (c *flatFeeChargeCollection) AddShrink(uniqueID string, existing persistedstate.Item, target targetstate.StateItem) error {

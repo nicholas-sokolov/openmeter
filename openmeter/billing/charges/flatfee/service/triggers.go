@@ -16,8 +16,36 @@ func (s *service) AdvanceCharge(ctx context.Context, input flatfee.AdvanceCharge
 		return nil, fmt.Errorf("validate: %w", err)
 	}
 
+	return s.withLockedCharge(ctx, input.ChargeID, func(ctx context.Context, charge flatfee.Charge) (*flatfee.Charge, error) {
+		stateMachine, err := NewCreditsOnlyStateMachine(CreditsOnlyStateMachineConfig{
+			Charge:  charge,
+			Service: s,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("new credits only state machine: %w", err)
+		}
+
+		return stateMachine.AdvanceUntilStateStable(ctx)
+	})
+}
+
+func (s *service) TriggerPatch(ctx context.Context, chargeID meta.ChargeID, patch meta.Patch) (*flatfee.Charge, error) {
+	if err := patch.Validate(); err != nil {
+		return nil, fmt.Errorf("patch: %w", err)
+	}
+
+	if err := chargeID.Validate(); err != nil {
+		return nil, fmt.Errorf("chargeID: %w", err)
+	}
+
 	return transaction.Run(ctx, s.adapter, func(ctx context.Context) (*flatfee.Charge, error) {
-		key, err := charges.NewLockKeyForCharge(input.ChargeID)
+		return nil, nil
+	})
+}
+
+func (s *service) withLockedCharge(ctx context.Context, chargeID meta.ChargeID, fn func(ctx context.Context, charge flatfee.Charge) (*flatfee.Charge, error)) (*flatfee.Charge, error) {
+	return transaction.Run(ctx, s.adapter, func(ctx context.Context) (*flatfee.Charge, error) {
+		key, err := charges.NewLockKeyForCharge(chargeID)
 		if err != nil {
 			return nil, fmt.Errorf("get charge lock key: %w", err)
 		}
@@ -27,8 +55,8 @@ func (s *service) AdvanceCharge(ctx context.Context, input flatfee.AdvanceCharge
 		}
 
 		fetchedCharges, err := s.adapter.GetByIDs(ctx, flatfee.GetByIDsInput{
-			Namespace: input.ChargeID.Namespace,
-			IDs:       []string{input.ChargeID.ID},
+			Namespace: chargeID.Namespace,
+			IDs:       []string{chargeID.ID},
 			Expands:   meta.Expands{meta.ExpandRealizations},
 		})
 		if err != nil {
@@ -45,14 +73,6 @@ func (s *service) AdvanceCharge(ctx context.Context, input flatfee.AdvanceCharge
 			return nil, fmt.Errorf("charge %s is not credit_only (settlement_mode=%s)", charge.ID, charge.Intent.SettlementMode)
 		}
 
-		stateMachine, err := NewCreditsOnlyStateMachine(CreditsOnlyStateMachineConfig{
-			Charge:  charge,
-			Service: s,
-		})
-		if err != nil {
-			return nil, fmt.Errorf("new credits only state machine: %w", err)
-		}
-
-		return stateMachine.AdvanceUntilStateStable(ctx)
+		return fn(ctx, charge)
 	})
 }

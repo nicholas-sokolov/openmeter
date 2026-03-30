@@ -27,6 +27,7 @@ type ChargeService interface {
 	Create(ctx context.Context, input CreateInput) (Charges, error)
 
 	AdvanceCharges(ctx context.Context, input AdvanceChargesInput) (Charges, error)
+	ApplyPatches(ctx context.Context, input ApplyPatchesInput) (Charges, error)
 	ListCharges(ctx context.Context, input ListChargesInput) (pagination.Result[Charge], error)
 }
 
