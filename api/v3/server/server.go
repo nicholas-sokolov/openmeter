@@ -25,6 +25,7 @@ import (
 	featureshandler "github.com/openmeterio/openmeter/api/v3/handlers/features"
 	llmcosthandler "github.com/openmeterio/openmeter/api/v3/handlers/llmcost"
 	metershandler "github.com/openmeterio/openmeter/api/v3/handlers/meters"
+	planshandler "github.com/openmeterio/openmeter/api/v3/handlers/plans"
 	subscriptionshandler "github.com/openmeterio/openmeter/api/v3/handlers/subscriptions"
 	taxcodeshandler "github.com/openmeterio/openmeter/api/v3/handlers/taxcodes"
 	"github.com/openmeterio/openmeter/api/v3/oasmiddleware"
@@ -166,6 +167,7 @@ type Server struct {
 	metersHandler               metershandler.Handler
 	subscriptionsHandler        subscriptionshandler.Handler
 	billingProfilesHandler      billingprofileshandler.Handler
+	plansHandler                planshandler.Handler
 	taxcodesHandler             taxcodeshandler.Handler
 	currenciesHandler           currencieshandler.Handler
 	featuresHandler             featureshandler.Handler
@@ -211,6 +213,7 @@ func NewServer(config *Config) (*Server, error) {
 	metersHandler := metershandler.New(resolveNamespace, config.MeterService, config.StreamingConnector, config.CustomerService, httptransport.WithErrorHandler(config.ErrorHandler))
 	subscriptionsHandler := subscriptionshandler.New(resolveNamespace, config.CustomerService, config.PlanService, config.PlanSubscriptionService, config.SubscriptionService, httptransport.WithErrorHandler(config.ErrorHandler))
 	billingProfilesHandler := billingprofileshandler.New(resolveNamespace, config.BillingService, httptransport.WithErrorHandler(config.ErrorHandler))
+	plansHandler := planshandler.New(resolveNamespace, config.PlanService, httptransport.WithErrorHandler(config.ErrorHandler))
 	taxcodesHandler := taxcodeshandler.New(resolveNamespace, config.TaxCodeService, httptransport.WithErrorHandler(config.ErrorHandler))
 	currenciesHandler := currencieshandler.New(config.NamespaceDecoder, config.CurrencyService, httptransport.WithErrorHandler(config.ErrorHandler))
 
@@ -238,6 +241,7 @@ func NewServer(config *Config) (*Server, error) {
 		metersHandler:               metersHandler,
 		subscriptionsHandler:        subscriptionsHandler,
 		billingProfilesHandler:      billingProfilesHandler,
+		plansHandler:                plansHandler,
 		taxcodesHandler:             taxcodesHandler,
 		currenciesHandler:           currenciesHandler,
 		featuresHandler:             featuresH,
